@@ -17,7 +17,10 @@ const httpPort = ":3000"
 func main() {
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)
-	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
+	r.Get("/{city}", func(w http.ResponseWriter, r *http.Request) {
+		city := chi.URLParam(r, "city")
+
+		fmt.Printf("requested city: %s\n", city)
 		_, err := w.Write([]byte("welcome"))
 		if err != nil {
 			log.Panicln(err)

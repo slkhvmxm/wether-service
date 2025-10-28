@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -65,10 +66,10 @@ func main() {
 			"select name, timestamp, temperature from reading where name = $1 order by timestamp desc limit 1", city,
 		).Scan(&reading.Name, &reading.Timestamp, &reading.Temperature)
 		if err != nil {
-			if err != nil {
-				log.Println(err)
-				w.WriteHeader(http.StatusInternalServerError)
-				w.Write([]byte("internal error"))
+			if errors.Is(err, pgx.ErrNoRows) {
+				w.WriteHeader(http.StatusNotFound)
+				w.Write([]byte("not found"))
+				return
 			}
 		}
 
@@ -76,11 +77,17 @@ func main() {
 		raw, err := json.Marshal(reading)
 		if err != nil {
 			log.Println(err)
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte("internal error"))
+			return
 		}
 
 		_, err = w.Write([]byte(raw))
 		if err != nil {
 			log.Println(err)
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte("internal error"))
+			return
 		}
 
 	})
